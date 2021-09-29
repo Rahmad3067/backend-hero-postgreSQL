@@ -130,16 +130,16 @@ app.get("/heroes/:name", async ( req, res ) =>{
 
 // Here we can add the name of hero with this request so same time we can type the name of hero and see the the power of that hero
 app.get("/heroes/:name/power", async ( req, res ) =>{
-    const heroId = req.params.name;
-    let hero;
+    const heroName = req.params.name;
+    let power;
     try {
-        hero = await Postgres.query(`SELECT superheroes.name,power.powers FROM power INNER JOIN heroespower ON heroespower.powerID =  power.id
+        power = await Postgres.query(`SELECT superheroes.name,power.powers FROM power INNER JOIN heroespower ON heroespower.powerID =  power.id
         INNER JOIN superheroes ON superheroes.id = heroespower.heroesID WHERE name=$1`, [
-            heroId,
+            heroName,
         ]);
         return res.status(201).json({
             message:"Success",
-            data: hero.rows,
+            data: power.rows,
         })
     } catch (err) {
         return res.status(400).json({
@@ -147,8 +147,6 @@ app.get("/heroes/:name/power", async ( req, res ) =>{
         })
     }
 })
-
-
 
 // app.get("/heroes/:name", async (req, res) => {
 //     const superHeros = await SuperHeros.find();
@@ -189,6 +187,44 @@ app.get("/heroes/:name/power", async ( req, res ) =>{
 //     })
 // })
 
+
+
+// app.patch("/heroes/:name/powers", async ( req,res ) =>{
+//     const name = req.params.name;
+//     const newPower = req.body.newPower
+//     let heroNew;
+//     try{
+//         neroNew = await Postgres.query("")
+//     }
+// })
+
+
+// Here we wanna get a power of a hero and then edit it with a new power that we write in Postman so we can replace the power in our table
+app.patch("/heroes/:name/powers/:power", async ( req, res ) => {
+    console.log("Patch")
+    const { name,power } = req.params;
+    const { newPower } = req.body;
+    try{
+        let idNewPower = await Postgres.query("SELECT id FROM power WHERE powers=$1", [ newPower ]);
+        let idOldPower = await Postgres.query("SELECT id FROM power WHERE powers=$1", [ power ]);
+        console.log("idOldPower.rows", idOldPower.rows);
+        console.log("idNewPower.rows", idNewPower.rows );
+        let heroPower = await Postgres.query(`SELECT heroespower.id,heroespower.heroesID FROM power INNER JOIN heroespower ON heroespower.powerID =  power.id
+        INNER JOIN superheroes ON superheroes.id = heroespower.heroesID WHERE superheroes.name =$1 AND heroespower.powerID = $2 `, [ name, idOldPower.rows[0].id ]);
+        console.log( "heroPower.rows", heroPower.rows ); 
+    
+        let newUpdate = await Postgres.query(`UPDATE heroespower SET powerID = $1 WHERE id=$2`,[idNewPower.rows[0].id,
+        heroPower.rows[0].id,
+        ]);
+        res.status(201).json({
+            messgae:"success",
+        })
+    } catch (err) {
+        return res.status(400).json({
+            message:"An error happened"
+        })
+    }
+})
 
 
 
