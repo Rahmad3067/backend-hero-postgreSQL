@@ -90,16 +90,63 @@ app.post("/heroespower", async ( req, res ) => {
     }
 })
 
+// here we do a request so we can see all the heroes with their powers together
+app.get("/herolist", async ( req, res ) => {
+    let newHeroList;
+    try{
+        newHeroList = await Postgres.query(`SELECT * FROM superheroes INNER JOIN heroespower ON heroespower.heroesID = superheroes.id 
+        INNER JOIN power ON heroespower.powerID = superheroes.id`);
+        return res.status(201).json({
+            message: "Success",
+            data: newHeroList.rows,
+        })
+    } catch (err) {
+        return res.status(400).json({
+            message:"An error happened..."
+        });
+        
+    }
+})
+
+// Here we can find a hero in the list with typing the name of hero in the Postman
+app.get("/heroes/:name", async ( req, res ) =>{
+    const heroId = req.params.name;
+    let hero;
+    try {
+        hero = await Postgres.query("SELECT * FROM superheroes WHERE name=$1", [
+            heroId,
+        ]);
+        return res.status(201).json({
+            message:"Success",
+            data: hero.rows,
+        })
+    } catch (err) {
+        return res.status(400).json({
+            message: "An error happened...",
+        })
+    }
+});
 
 
-
-// app.get("/heroes", async (req, res) => {
-//     const superHeros = await SuperHeros.find();
-//     res.json({
-//         message: "Heroes List",
-//         data: superHeros,
-//     })
-// })
+// Here we can add the name of hero with this request so same time we can type the name of hero and see the the power of that hero
+app.get("/heroes/:name/power", async ( req, res ) =>{
+    const heroId = req.params.name;
+    let hero;
+    try {
+        hero = await Postgres.query(`SELECT superheroes.name,power.powers FROM power INNER JOIN heroespower ON heroespower.powerID =  power.id
+        INNER JOIN superheroes ON superheroes.id = heroespower.heroesID WHERE name=$1`, [
+            heroId,
+        ]);
+        return res.status(201).json({
+            message:"Success",
+            data: hero.rows,
+        })
+    } catch (err) {
+        return res.status(400).json({
+            message: "An error happened...",
+        })
+    }
+})
 
 
 
@@ -113,7 +160,6 @@ app.post("/heroespower", async ( req, res ) => {
 //         data: newHeroes,
 //     })
 // });
-
 // app.get("/heroes/:name/power", async (req, res) => {
 //     const superHeros = await SuperHeros.find();
 //     let param = req.params.name;
@@ -124,6 +170,7 @@ app.post("/heroespower", async ( req, res ) => {
 //     data: hero.power
 // })
 // })
+
 
 // app.patch("/heroes/:name/powers", async(req, res) => {
 //     const name = req.params.name;
